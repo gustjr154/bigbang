@@ -13,4 +13,6 @@ bigbang k8s platform work-step
  2) chmod 700 get_helm.sh
  3) ./get_helm.sh
 
+* Step3 - Rook Ceph
+
  
