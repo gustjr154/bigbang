@@ -1,0 +1,18 @@
+# vi metallb-conigMap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: default
+      protocol: layer2
+      addresses:
+      - 27.255.75.27-27.255.75.31     #External IP로 할당가능한 대역 삽입 첫번째
+    - name: web
+      protocol: layer2
+      addresses:
+      - 27.255.75.34-27.255.75.38     #External IP로 할당가능한 대역 삽입 두번째 // 계속 추가 생성 가능
