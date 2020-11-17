@@ -10,3 +10,4 @@ bigbang k8s platform work-step
  
 - 참고사항
 : 병목현상 생길 가능성 있음 - 특정 노드에 트래픽 집중 및 이후 분산 (layer2 mode) /  annotations를 활용하여 multi address-pool을 지원할 수 있음  
+
