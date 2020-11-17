@@ -1,0 +1,15 @@
+# vi service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  annotations:
+    metallb.universe.tf/address-pool: web   ## 'web' address-pool에서 사용 지정
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: nginx
+  type: LoadBalancer
