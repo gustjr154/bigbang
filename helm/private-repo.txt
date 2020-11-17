@@ -1,0 +1,34 @@
+# Local Private Repository >> Master노드에 Chart-Museum 컨테이너 생성 후 저장소를 로컬로 설정하여 실행
+
+1) 설치
+  $ mkdir -p /data/charts
+  $ chown 1000:1000 /data/charts
+  $ docker run -d -it  \
+     --net host  \
+     -v /data/charts:/charts  \
+     -e STORAGE=local  \
+     -e STORAGE_LOCAL_ROOTDIR=/charts  \
+     --name chartmuseum  \
+    docker.io/chartmuseum/chartmuseum
+    
+ 2) 설치 후, api를 통해 등록된 차트 확인 (현재는 없음)
+  $ curl http://localhost:8080/api/charts
+
+ 3) 테스트용 차트 생성 (이름: test-chartmuseum)
+  $ helm create test-chartmuseum
+     생성한 차트를 gzip으로 패키징 (why? - Repo에는 gzip형태로 저장되기 때문)
+   $ helm package test-chartmuseum
+   $ ls -al /root/test-chartmuseum-0.1.0.tgz
+
+ 4) curl을 사용하여 패키징한 Chart를 Chartmuseum에 등록하고 재호출 해봄
+  $ curl --data-binary "@test-chartmuseum-0.1.0.tgz" http://localhost:8080/api/charts
+  $ curl -s http://localhost:8080/api/charts
+
+ 5) 로컬저장소에서도 패키징된 차트가 복사되었는지 확인
+  $ ls -al /data/charts
+
+ 6) 생성한 Private Repo를 Helm Repo 로 등록
+  $ helm repo add chartmuseum http://localhost:8080/
+  (확인) $ helm repo list
+         $ helm search repo chartmuseum    
+
