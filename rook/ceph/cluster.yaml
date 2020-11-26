@@ -1,0 +1,217 @@
+#################################################################################################################
+#   common.yaml, operator.yaml 을 배포한뒤에 해당 yaml을 배포할 것
+#   $ kubectl create -f cluster.yaml
+#################################################################################################################
+
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: rook-ceph
+spec:
+  cephVersion:
+    # Ceph 데몬 파드들을 설정/시작 (mon, mgr, osd, mds, rgw).
+    # v13 is mimic, v14 is nautilus, and v15 is octopus (버전설명)
+    # 권장 : 운영환경에서는,일반 v14 flag대신 특정버전의 tag를 사용, 그렇게하면 최신 릴리즈를 가져옴
+    # See tags available at https://hub.docker.com/r/ceph/ceph/tags/.
+    # If you want to be more precise, you can always use a timestamp tag such ceph/ceph:v15.2.5-20200916    
+    image: ceph/ceph:v15.2.5
+    # 지원되지 않는 ceph버전을 허용할 것인지 여부. 현재는 `nautilus`와 `octopus` 가 지원됨
+    # `pacific`같은 향후 버전에서는 이것을 true로 설정해야함
+    # 대신 운영환경에서는 true로 설정하지 마시오!
+    allowUnsupported: false
+  # 구성파일이 위치할 호스트 경로 (필수지정)
+  # 중요: 클러스터를 재설치하는 경우, 각 호스트(node)에서 이 디렉터리를 삭제해야함!. 그렇지않으면 mons가 재시작되지 않음
+  dataDirHostPath: /var/lib/rook
+  # 점검에 실패하더라도 업그레이드를 계속할 것인지 여부 (true or false)
+  # 일반적으로 점검실패 시 ceph의 상태가 저하될 수 있고 업그레이드는 비권장이지만, 이를 선택할수있음 (책임은 자신이)
+  # rook ceph의 업그레이드 절차 이해를 위해서 다음 링크를 참조. https://rook.io/docs/rook/master/ceph-upgrade.html#ceph-version-upgrades
+  skipUpgradeChecks: false
+  # 업그레이드 중, PG가 clean하지 않을 경우 계속진행할 것인지 여부(true or false)
+  continueUpgradeAfterChecksEvenIfNotHealthy: false
+  mon:
+    # mon의 개수를 지정. 홀수로 지정해야하며 일반적으로 3을 권장(default)
+    count: 3
+    # mon은 고유한 노드에 존재해야하며, 운영의 경우 최소 3개 이상의 노드를 권장
+    # 테스트환경에서만 동일 노드에서 2개이상의 mon을 사용할 것 (운영환경에서는 노드당 1개가 권장)
+    allowMultiplePerNode: false
+  mgr:
+    modules:
+    # Several modules should not need to be included in this list. The "dashboard" and "monitoring" modules
+    # are already enabled by other settings in the cluster CR.
+    - name: pg_autoscaler
+      enabled: true
+  # ceph 대시보드 활성화 섹션
+  dashboard:
+    enabled: true
+    # serve the dashboard under a subpath (useful when you are accessing the dashboard via a reverse proxy)
+    # urlPrefix: /ceph-dashboard
+    # 포트번호 수정 시 아래 라인 변경
+    # port: 8443
+    # SSL을 사용하여 대시보드 제공(default : true)
+    ssl: true
+  # 클러스터에 대한 프로메테우스 알림 활성화 섹션
+  monitoring:
+    # (전제조건)프로메테우스가 사전에 설치되어있어야함
+    enabled: false
+    # prometheusRule을 배포할 네임스페이스. 비어있을 경우, 클러스터의 네임스페이스가 사용됨
+    rulesNamespace: rook-ceph
+  network:
+    # 호스트 네트워킹 활성화 섹션 (무시)
+    #provider: host
+    # EXPERIMENTAL: enable the Multus network provider
+    #provider: multus
+    #selectors:
+      #public: public-conf --> NetworkAttachmentDefinition object name in Multus
+      #cluster: cluster-conf --> NetworkAttachmentDefinition object name in Multus
+    # Provide internet protocol version. IPv6, IPv4 or empty string are valid options. Empty string would mean IPv4
+    #ipFamily: "IPv6"
+  # ceph 데몬 충돌에 대한 수집기능 활성여부
+  crashCollector:
+    disable: false
+    # 아래 숫자보다 오래된 crash 항목을 제거(보관주기-주석제거필요)
+    #daysToRetain: 30
+  cleanupPolicy:
+    # 클러스터 정리 정책. 데이터가 파괴되므로 확인필요.
+    # 호스트의 모든 Rook 데이터를 삭제하기위해서는 다음을 설정해야함 "yes-really-destroy-data".
+    confirmation: ""
+    # 클러스터 삭제시 OSD 디스크를 삭제하기 위한 설정 섹션(sanitizeDisks)
+    sanitizeDisks:
+      # method는 전체 디스크를 삭제할 것인지, 단순히 ceph의 메타데이터만 삭제하는지 여부
+      # 두 경우모두 재설치가 가능하며, 'complete' or 'quick' (default) 중 하나를 선택가능
+      method: quick
+      # dataSource 디스크에 쓸 임의의 bytes를 가져올 위치를 표시. 'zero'(default) 또는 'random' 중 선택
+      dataSource: zero
+      # iteration overwrite N times instead of the default (1)
+      # takes an integer value
+      iteration: 1
+    # allowUninstallWithVolumes은 uninstall을 수행하는 방법을 정의
+    # true로 설정하면 cephCluster 삭제는 PV가 삭제될 때까지 기다리지 않음.
+    allowUninstallWithVolumes: false
+  # 쿠버네티스에서 다양한 rook-ceph 서비스를 어디다가 위치시킬것인지 제어하기 위한 배치구성은 아래 섹션에서부터 수정
+  # 아래의 샘플[예시]에서는 all아래의 'role=storage-node'로 레이블이 지정된 k8s 노드에 예약됨
+#  placement:
+#    all:
+#      nodeAffinity:
+#        requiredDuringSchedulingIgnoredDuringExecution:
+#          nodeSelectorTerms:
+#          - matchExpressions:
+#            - key: role
+#              operator: In
+#              values:
+#              - storage-node
+#      podAffinity:
+#      podAntiAffinity:
+#      topologySpreadConstraints:
+#      tolerations:
+#      - key: storage-node
+#        operator: Exists
+# The above placement information can also be specified for mon, osd, and mgr components
+#    mon:
+# Monitor deployments may contain an anti-affinity rule for avoiding monitor
+# collocation on the same node. This is a required rule when host network is used
+# or when AllowMultiplePerNode is false. Otherwise this anti-affinity rule is a
+# preferred rule with weight: 50.
+#    osd:
+#    mgr:
+#    cleanup:
+  annotations:
+#    all:
+#    mon:
+#    osd:
+#    cleanup:
+#    prepareosd:
+# If no mgr annotations are set, prometheus scrape annotations will be set by default.
+#    mgr:
+  labels:
+#    all:
+#    mon:
+#    osd:
+#    cleanup:
+#    mgr:
+#    prepareosd:
+  resources:
+# MGR 파드에 cpu 및 메모리 자원할당
+#    mgr:
+#      limits:
+#        cpu: "500m"
+#        memory: "1024Mi"
+#      requests:
+#        cpu: "500m"
+#        memory: "1024Mi"
+# 위 예시를 mon이나 osd에도 적용(추가)가능
+#    mon:
+#    osd:
+#    prepareosd:
+#    crashcollector:
+#    cleanup:
+  # 꺼져있거나 중지된 OSD를 자동으로 제거한 옵션 (default는 false)
+  removeOSDsIfOutAndSafeToRemove: false
+#  priorityClassNames:
+#    all: rook-ceph-default-priority-class
+#    mon: rook-ceph-mon-priority-class
+#    osd: rook-ceph-osd-priority-class
+#    mgr: rook-ceph-mgr-priority-class
+  storage: # 저장소[storage]를 구성하고 선택하는 섹션. 모든노드 or 모든 disk를 사용할것인지 여부 등 체크
+    useAllNodes: true
+    useAllDevices: true
+    #deviceFilter:
+    config:
+      # crushRoot: "custom-root" # specify a non-default root label for the CRUSH map
+      # metadataDevice: "md0" # specify a non-rotational storage so ceph-volume will use it as block db device of bluestore.
+      # databaseSizeMB: "1024" # uncomment if the disks are smaller than 100 GB
+      # journalSizeMB: "1024"  # uncomment if the disks are 20 GB or smaller
+      # osdsPerDevice: "1" # this value can be overridden at the node or device level
+      # encryptedDevice: "true" # the default value for this option is "false"
+# 개별 노드 사용지정 구성을 수동으로 할 수 있으나, 수동 설정을 위해서는 위 ussAllNodes를 'false'로 설정해야함
+# 샘플로 아래 노드는 스토리지 리소스로 사용됨.  각 노드의 'name' 필드값은 'kubernetes.io/hostname' 라벨과 일치해야한다.
+#    nodes:
+#    - name: "172.17.4.201"
+#      devices: # specific devices to use for storage can be specified for each node
+#      - name: "sdb"
+#      - name: "nvme01" # multiple osds can be created on high performance devices
+#        config:
+#          osdsPerDevice: "5"
+#      - name: "/dev/disk/by-id/ata-ST4000DM004-XXXX" # devices can be specified using full udev paths
+#      config: # configuration can be specified at the node level which overrides the cluster level config
+#        storeType: filestore
+#    - name: "172.17.4.301"
+#      deviceFilter: "^sd."
+  # 업그레이드 or 차단 중에 데몬 중단관리를 구성하는 섹션
+  disruptionManagement:
+    # true로 설정 시, OSD, Mon, RGW, and MDS 데몬에 대한 PodDisruptionBudgets를 만들고 관리. OSD PDB는 동적으로 관리된다.
+    managePodBudgets: false
+    # A duration in minutes that determines how long an entire failureDomain like `region/zone/host` will be held in `noout` (in addition to the
+    # default DOWN/OUT interval) when it is draining. This is only relevant when  `managePodBudgets` is `true`. The default value is `30` minutes.
+    osdMaintenanceTimeout: 30
+    # OSD가 다시 활성화된 후,  active+clean 될 때까지 기다리는 시간(분)
+    # Operator가 제한시간이 초과되면 다음 drain을 계속진행. managePodBudgets가 true인 경우에만 작동
+    # 값이 없거나 0은 작업자가 배치그룹이 정상이 될 때까지 기다렸다가 다음 배수를 차단함을 의미
+    pgHealthCheckTimeout: 0
+    # True인경우 MachineDisruptionBudgets를 생성하고 관리하여 클러스터가 정상일 때만 OSD가 차단되도록한다.
+    # OpenShift에서만 사용가능 (k8s는 해당사항없음)
+    manageMachineDisruptionBudgets: false
+    # MachineDisruptionBudgets을 감시할 네임스페이스
+    machineDisruptionBudgetNamespace: openshift-machine-api
+
+  # healthChecks
+  # Valid values for daemons are 'mon', 'osd', 'status'
+  healthCheck:
+    daemonHealth:
+      mon:
+        disabled: false
+        interval: 45s
+      osd:
+        disabled: false
+        interval: 60s
+      status:
+        disabled: false
+        interval: 60s
+    # Change pod liveness probe, it works for all mon,mgr,osd daemons
+    livenessProbe:
+      mon:
+        disabled: false
+      mgr:
+        disabled: false
+      osd:
+        disabled: false
