@@ -18,11 +18,11 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
    name: rook-ceph-block
-# Change "rook-ceph" provisioner prefix to match the operator namespace if needed
+# provisioner 접두사부분을 네임스페이스와 일치시켜야함. ex) 네임스페이스가 default라면 default.rbd.csi.ceph.com이 되어야함
 provisioner: rook-ceph.rbd.csi.ceph.com
 parameters:
-    # clusterID is the namespace where the rook cluster is running
-    # If you change this namespace, also change the namespace below where the secret namespaces are defined
+    # clusterID는 rook cluster가 실행중인 네임스페이스
+    # clusterID 변경 시, 아래 연관되는 부분도 동일하게 변경필요
     clusterID: rook-ceph
 
     # If you want to use erasure coded pool with RBD, you need to create
@@ -58,3 +58,4 @@ parameters:
 #mounter: rbd-nbd
 allowVolumeExpansion: true
 reclaimPolicy: Delete
+#reclaimPolicy는 Retain, Delete등..
