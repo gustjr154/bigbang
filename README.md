@@ -15,4 +15,8 @@ bigbang k8s platform work-step
 
 * Step3 - Rook Ceph
 
+
+
+* Step4 - Prometheus + Grafana (Using Helm)
+
  
