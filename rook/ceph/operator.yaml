@@ -58,15 +58,15 @@ data:
   # kubelet 디렉터리 경로, if kubelet configured to use other than /var/lib/kubelet path.
   # ROOK_CSI_KUBELET_DIR_PATH: "/var/lib/kubelet"
 
-  # Labels to add to the CSI CephFS Deployments and DaemonSets Pods.
+  # CSI CephFS Deployments and DaemonSets 에 추가할 Label 정보 기입 
   # ROOK_CSI_CEPHFS_POD_LABELS: "key1=value1,key2=value2"
-  # Labels to add to the CSI RBD Deployments and DaemonSets Pods.
+  # CSI RBD Deployments and DaemonSets 에 추가할 Label 정보 기입
   # ROOK_CSI_RBD_POD_LABELS: "key1=value1,key2=value2"
 
-  # (Optional) Ceph Provisioner NodeAffinity.
+  # (선택) Ceph Provisioner NodeAffinity (Ceph Provisioner 노드어피니티 설정)
   # CSI_PROVISIONER_NODE_AFFINITY: "role=storage-node; storage=rook, ceph"
-  # (Optional) CEPH CSI provisioner tolerations list. Put here list of taints you want to tolerate in YAML format.
-  # CSI provisioner would be best to start on the same nodes as other ceph daemons.
+  # (선택) CEPH CSI provisioner tolerations list(Ceph Provisioner 톨러레이션 리스트). Put here list of taints you want to tolerate in YAML format.
+  # CSI provisioner는 다른 Ceph 데몬과 동일한 노드에서 시작하는 것이 가장 좋다고함
   # CSI_PROVISIONER_TOLERATIONS: |
   #   - effect: NoSchedule
   #     key: node-role.kubernetes.io/controlplane
@@ -74,9 +74,9 @@ data:
   #   - effect: NoExecute
   #     key: node-role.kubernetes.io/etcd
   #     operator: Exists
-  # (Optional) Ceph CSI plugin NodeAffinity.
+  # (선택) Ceph CSI plugin NodeAffinity. (Ceph plugin 노드어피니티 설정)
   # CSI_PLUGIN_NODE_AFFINITY: "role=storage-node; storage=rook, ceph"
-  # (Optional) CEPH CSI plugin tolerations list. Put here list of taints you want to tolerate in YAML format.
+  # (선택) CEPH CSI plugin tolerations list. (Ceph plugin 톨러레이션 리스트) Put here list of taints you want to tolerate in YAML format.
   # CSI plugins need to be started on all the nodes where the clients need to mount the storage.
   # CSI_PLUGIN_TOLERATIONS: |
   #   - effect: NoSchedule
@@ -86,7 +86,7 @@ data:
   #     key: node-role.kubernetes.io/etcd
   #     operator: Exists
 
-  # (Optional) CEPH CSI RBD provisioner resource requirement list, Put here list of resource
+  # (선택) CEPH CSI RBD provisioner 리소스 명세 설정, Put here list of resource
   # requests and limits you want to apply for provisioner pod
   # CSI_RBD_PROVISIONER_RESOURCE: |
   #  - name : csi-provisioner
@@ -137,7 +137,7 @@ data:
   #      limits:
   #        memory: 256Mi
   #        cpu: 100m
-  # (Optional) CEPH CSI RBD plugin resource requirement list, Put here list of resource
+  # (선택) CEPH CSI RBD plugin 리소스 명세 설정, Put here list of resource
   # requests and limits you want to apply for plugin pod
   # CSI_RBD_PLUGIN_RESOURCE: |
   #  - name : driver-registrar
@@ -164,7 +164,7 @@ data:
   #      limits:
   #        memory: 256Mi
   #        cpu: 100m
-  # (Optional) CEPH CSI CephFS provisioner resource requirement list, Put here list of resource
+  # (선책) CEPH CSI CephFS provisioner 리소스 명세 설정, Put here list of resource
   # requests and limits you want to apply for provisioner pod
   # CSI_CEPHFS_PROVISIONER_RESOURCE: |
   #  - name : csi-provisioner
@@ -207,7 +207,7 @@ data:
   #      limits:
   #        memory: 256Mi
   #        cpu: 100m
-  # (Optional) CEPH CSI CephFS plugin resource requirement list, Put here list of resource
+  # (선택) CEPH CSI CephFS plugin 리소스 명세 설정, Put here list of resource
   # requests and limits you want to apply for plugin pod
   # CSI_CEPHFS_PLUGIN_RESOURCE: |
   #  - name : driver-registrar
@@ -257,7 +257,7 @@ data:
   #     key: node-role.kubernetes.io/etcd
   #     operator: Exists
 ---
-# OLM: BEGIN OPERATOR DEPLOYMENT
+# OLM: 이제부터 Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
